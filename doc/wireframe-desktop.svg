@@ -1,0 +1,155 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" font-family="Arial, sans-serif">
+  <!-- Background -->
+  <rect width="1200" height="900" fill="#1a1a2e"/>
+
+  <!-- Title -->
+  <text x="600" y="30" text-anchor="middle" fill="#888" font-size="12">Tier List Maker — デスクトップ ワイヤーフレーム (1200px+)</text>
+
+  <!-- ========== HEADER ========== -->
+  <rect x="0" y="40" width="1200" height="60" fill="#16213e" stroke="#0f3460" stroke-width="1"/>
+  <text x="20" y="76" fill="#e94560" font-size="20" font-weight="bold">Tier List Maker</text>
+
+  <!-- Tier表タイトル（編集可能） -->
+  <rect x="250" y="55" width="400" height="32" rx="4" fill="#1a1a2e" stroke="#333" stroke-width="1" stroke-dasharray="4,2"/>
+  <text x="450" y="76" text-anchor="middle" fill="#aaa" font-size="14">My Tier List（クリックで編集）</text>
+
+  <!-- アクションボタン群 -->
+  <rect x="780" y="55" width="120" height="32" rx="4" fill="#0f3460"/>
+  <text x="840" y="76" text-anchor="middle" fill="#fff" font-size="12">📋 URLをコピー</text>
+
+  <rect x="910" y="55" width="130" height="32" rx="4" fill="#0f3460"/>
+  <text x="975" y="76" text-anchor="middle" fill="#fff" font-size="12">📷 画像として保存</text>
+
+  <rect x="1050" y="55" width="80" height="32" rx="4" fill="#533" stroke="#e94560" stroke-width="1"/>
+  <text x="1090" y="76" text-anchor="middle" fill="#e94560" font-size="12">🔄 リセット</text>
+
+  <!-- ========== TIER AREA ========== -->
+  <!-- Tier S -->
+  <g transform="translate(20, 115)">
+    <rect x="0" y="0" width="80" height="80" fill="#FF6B6B" rx="4"/>
+    <text x="40" y="48" text-anchor="middle" fill="#fff" font-size="28" font-weight="bold">S</text>
+    <!-- カラーピッカーアイコン -->
+    <circle cx="70" cy="10" r="6" fill="#fff" opacity="0.3"/>
+    <text x="70" y="14" text-anchor="middle" fill="#333" font-size="8">🎨</text>
+
+    <rect x="88" y="0" width="1060" height="80" fill="#2a2a3e" rx="4" stroke="#FF6B6B" stroke-width="1" opacity="0.8"/>
+    <!-- アイテムカード -->
+    <rect x="96" y="8" width="64" height="64" rx="4" fill="#333" stroke="#555" stroke-width="1"/>
+    <text x="128" y="44" text-anchor="middle" fill="#888" font-size="10">IMG</text>
+    <text x="128" y="58" text-anchor="middle" fill="#aaa" font-size="8">ラベル</text>
+
+    <rect x="168" y="8" width="64" height="64" rx="4" fill="#333" stroke="#555" stroke-width="1"/>
+    <text x="200" y="44" text-anchor="middle" fill="#888" font-size="10">IMG</text>
+
+    <rect x="240" y="8" width="64" height="64" rx="4" fill="#333" stroke="#555" stroke-width="1"/>
+    <text x="272" y="44" text-anchor="middle" fill="#888" font-size="10">IMG</text>
+
+    <!-- ドロップヒント -->
+    <text x="600" y="48" text-anchor="middle" fill="#555" font-size="11">← ここにドラッグ＆ドロップ →</text>
+
+    <!-- Tier削除ボタン -->
+    <circle cx="1138" cy="40" r="10" fill="#533" stroke="#e94560" stroke-width="1"/>
+    <text x="1138" y="44" text-anchor="middle" fill="#e94560" font-size="12">×</text>
+  </g>
+
+  <!-- Tier A -->
+  <g transform="translate(20, 203)">
+    <rect x="0" y="0" width="80" height="80" fill="#FFA94D" rx="4"/>
+    <text x="40" y="48" text-anchor="middle" fill="#fff" font-size="28" font-weight="bold">A</text>
+    <rect x="88" y="0" width="1060" height="80" fill="#2a2a3e" rx="4" stroke="#FFA94D" stroke-width="1" opacity="0.8"/>
+    <rect x="96" y="8" width="64" height="64" rx="4" fill="#333" stroke="#555" stroke-width="1"/>
+    <text x="128" y="44" text-anchor="middle" fill="#888" font-size="10">IMG</text>
+    <rect x="168" y="8" width="64" height="64" rx="4" fill="#333" stroke="#555" stroke-width="1"/>
+    <text x="200" y="44" text-anchor="middle" fill="#888" font-size="10">IMG</text>
+    <circle cx="1138" cy="40" r="10" fill="#533" stroke="#e94560" stroke-width="1"/>
+    <text x="1138" y="44" text-anchor="middle" fill="#e94560" font-size="12">×</text>
+  </g>
+
+  <!-- Tier B -->
+  <g transform="translate(20, 291)">
+    <rect x="0" y="0" width="80" height="80" fill="#FFD43B" rx="4"/>
+    <text x="40" y="48" text-anchor="middle" fill="#333" font-size="28" font-weight="bold">B</text>
+    <rect x="88" y="0" width="1060" height="80" fill="#2a2a3e" rx="4" stroke="#FFD43B" stroke-width="1" opacity="0.8"/>
+    <rect x="96" y="8" width="64" height="64" rx="4" fill="#333" stroke="#555" stroke-width="1"/>
+    <text x="128" y="44" text-anchor="middle" fill="#888" font-size="10">IMG</text>
+    <circle cx="1138" cy="40" r="10" fill="#533" stroke="#e94560" stroke-width="1"/>
+    <text x="1138" y="44" text-anchor="middle" fill="#e94560" font-size="12">×</text>
+  </g>
+
+  <!-- Tier C -->
+  <g transform="translate(20, 379)">
+    <rect x="0" y="0" width="80" height="80" fill="#69DB7C" rx="4"/>
+    <text x="40" y="48" text-anchor="middle" fill="#333" font-size="28" font-weight="bold">C</text>
+    <rect x="88" y="0" width="1060" height="80" fill="#2a2a3e" rx="4" stroke="#69DB7C" stroke-width="1" opacity="0.8"/>
+    <circle cx="1138" cy="40" r="10" fill="#533" stroke="#e94560" stroke-width="1"/>
+    <text x="1138" y="44" text-anchor="middle" fill="#e94560" font-size="12">×</text>
+    <text x="600" y="48" text-anchor="middle" fill="#555" font-size="11">（空のTier行）</text>
+  </g>
+
+  <!-- Tier D -->
+  <g transform="translate(20, 467)">
+    <rect x="0" y="0" width="80" height="80" fill="#74C0FC" rx="4"/>
+    <text x="40" y="48" text-anchor="middle" fill="#fff" font-size="28" font-weight="bold">D</text>
+    <rect x="88" y="0" width="1060" height="80" fill="#2a2a3e" rx="4" stroke="#74C0FC" stroke-width="1" opacity="0.8"/>
+    <circle cx="1138" cy="40" r="10" fill="#533" stroke="#e94560" stroke-width="1"/>
+    <text x="1138" y="44" text-anchor="middle" fill="#e94560" font-size="12">×</text>
+  </g>
+
+  <!-- Tier E -->
+  <g transform="translate(20, 555)">
+    <rect x="0" y="0" width="80" height="80" fill="#B197FC" rx="4"/>
+    <text x="40" y="48" text-anchor="middle" fill="#fff" font-size="28" font-weight="bold">E</text>
+    <rect x="88" y="0" width="1060" height="80" fill="#2a2a3e" rx="4" stroke="#B197FC" stroke-width="1" opacity="0.8"/>
+    <circle cx="1138" cy="40" r="10" fill="#533" stroke="#e94560" stroke-width="1"/>
+    <text x="1138" y="44" text-anchor="middle" fill="#e94560" font-size="12">×</text>
+  </g>
+
+  <!-- + Tier追加ボタン -->
+  <rect x="20" y="643" width="1148" height="36" rx="4" fill="none" stroke="#555" stroke-width="1" stroke-dasharray="6,3"/>
+  <text x="594" y="666" text-anchor="middle" fill="#888" font-size="13">＋ Tier を追加</text>
+
+  <!-- ========== POOL AREA ========== -->
+  <rect x="20" y="695" width="1148" height="160" rx="8" fill="#16213e" stroke="#0f3460" stroke-width="1"/>
+  <text x="40" y="720" fill="#aaa" font-size="14" font-weight="bold">未配置アイテム（プール）</text>
+
+  <!-- タブ切り替え -->
+  <rect x="40" y="730" width="90" height="28" rx="4" fill="#0f3460"/>
+  <text x="85" y="749" text-anchor="middle" fill="#fff" font-size="11">🔗 URL追加</text>
+  <rect x="136" y="730" width="120" height="28" rx="4" fill="#2a2a3e" stroke="#555" stroke-width="1"/>
+  <text x="196" y="749" text-anchor="middle" fill="#aaa" font-size="11">📁 画像アップロード</text>
+
+  <!-- URL入力フィールド -->
+  <rect x="270" y="730" width="400" height="28" rx="4" fill="#1a1a2e" stroke="#333" stroke-width="1"/>
+  <text x="280" y="749" fill="#555" font-size="11">https://example.com/image.png</text>
+  <rect x="678" y="730" width="60" height="28" rx="4" fill="#0f3460"/>
+  <text x="708" y="749" text-anchor="middle" fill="#fff" font-size="11">追加</text>
+
+  <!-- プール内アイテム -->
+  <rect x="40" y="770" width="64" height="64" rx="4" fill="#333" stroke="#555" stroke-width="1"/>
+  <text x="72" y="806" text-anchor="middle" fill="#888" font-size="10">IMG</text>
+
+  <rect x="112" y="770" width="64" height="64" rx="4" fill="#333" stroke="#555" stroke-width="1"/>
+  <text x="144" y="806" text-anchor="middle" fill="#888" font-size="10">IMG</text>
+
+  <!-- ローカル画像（バッジ付き） -->
+  <rect x="184" y="770" width="64" height="64" rx="4" fill="#333" stroke="#FFA94D" stroke-width="1"/>
+  <text x="216" y="806" text-anchor="middle" fill="#888" font-size="10">IMG</text>
+  <rect x="224" y="772" width="22" height="14" rx="3" fill="#FFA94D"/>
+  <text x="235" y="783" text-anchor="middle" fill="#333" font-size="9">🔒</text>
+
+  <rect x="256" y="770" width="64" height="64" rx="4" fill="#333" stroke="#555" stroke-width="1"/>
+  <text x="288" y="806" text-anchor="middle" fill="#888" font-size="10">IMG</text>
+
+  <text x="380" y="810" fill="#555" font-size="11">← ドラッグしてTierに配置 →</text>
+
+  <!-- ========== FOOTER ========== -->
+  <rect x="0" y="870" width="1200" height="30" fill="#16213e"/>
+  <text x="600" y="890" text-anchor="middle" fill="#555" font-size="11">© 2026 Tier List Maker</text>
+
+  <!-- ========== 注釈 ========== -->
+  <line x1="1155" y1="118" x2="1185" y2="100" stroke="#e94560" stroke-width="1" stroke-dasharray="2,2"/>
+  <text x="1185" y="97" fill="#e94560" font-size="9" text-anchor="end">削除ボタン</text>
+
+  <line x1="70" y1="118" x2="70" y2="108" stroke="#69DB7C" stroke-width="1" stroke-dasharray="2,2"/>
+  <text x="70" y="108" fill="#69DB7C" font-size="9" text-anchor="middle">色変更</text>
+</svg>

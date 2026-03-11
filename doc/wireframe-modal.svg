@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" font-family="Arial, sans-serif">
+  <!-- Background (dimmed) -->
+  <rect width="1200" height="700" fill="#1a1a2e" opacity="0.9"/>
+
+  <text x="600" y="30" text-anchor="middle" fill="#888" font-size="12">Tier List Maker — モーダル・ダイアログ ワイヤーフレーム</text>
+
+  <!-- ====== 1. Tier名編集（インライン） ====== -->
+  <g transform="translate(30, 50)">
+    <text x="0" y="0" fill="#aaa" font-size="13" font-weight="bold">1. Tier名インライン編集</text>
+    <rect x="0" y="15" width="300" height="70" fill="#16213e" rx="4" stroke="#0f3460" stroke-width="1"/>
+    <rect x="0" y="15" width="80" height="70" fill="#FF6B6B" rx="4"/>
+    <!-- 編集中の入力フィールド -->
+    <rect x="8" y="33" width="64" height="28" rx="3" fill="#fff" stroke="#0f3460" stroke-width="2"/>
+    <text x="40" y="52" text-anchor="middle" fill="#333" font-size="16" font-weight="bold">SS</text>
+    <text x="40" y="75" text-anchor="middle" fill="#fff" font-size="8">Enter で確定</text>
+    <rect x="88" y="15" width="212" height="70" fill="#2a2a3e" rx="4"/>
+    <text x="194" y="55" text-anchor="middle" fill="#555" font-size="10">アイテム配置エリア</text>
+  </g>
+
+  <!-- ====== 2. カラーピッカー ====== -->
+  <g transform="translate(370, 50)">
+    <text x="0" y="0" fill="#aaa" font-size="13" font-weight="bold">2. カラーピッカー（ポップオーバー）</text>
+    <rect x="0" y="15" width="220" height="160" rx="8" fill="#222" stroke="#555" stroke-width="1"/>
+
+    <!-- プリセットカラー -->
+    <text x="15" y="40" fill="#aaa" font-size="10">プリセット</text>
+    <circle cx="25" cy="60" r="12" fill="#FF6B6B" stroke="#fff" stroke-width="2"/>
+    <circle cx="55" cy="60" r="12" fill="#FFA94D"/>
+    <circle cx="85" cy="60" r="12" fill="#FFD43B"/>
+    <circle cx="115" cy="60" r="12" fill="#69DB7C"/>
+    <circle cx="145" cy="60" r="12" fill="#74C0FC"/>
+    <circle cx="175" cy="60" r="12" fill="#B197FC"/>
+
+    <!-- カスタムカラー -->
+    <text x="15" y="95" fill="#aaa" font-size="10">カスタム</text>
+    <rect x="15" y="105" width="80" height="24" rx="3" fill="#1a1a2e" stroke="#333" stroke-width="1"/>
+    <text x="25" y="121" fill="#aaa" font-size="10">#FF6B6B</text>
+    <rect x="100" y="105" width="24" height="24" rx="3" fill="#FF6B6B" stroke="#fff" stroke-width="1"/>
+
+    <rect x="15" y="140" width="80" height="24" rx="4" fill="#0f3460"/>
+    <text x="55" y="156" text-anchor="middle" fill="#fff" font-size="10">適用</text>
+  </g>
+
+  <!-- ====== 3. リセット確認ダイアログ ====== -->
+  <g transform="translate(630, 50)">
+    <text x="0" y="0" fill="#aaa" font-size="13" font-weight="bold">3. リセット確認ダイアログ</text>
+    <rect x="0" y="15" width="300" height="130" rx="8" fill="#222" stroke="#e94560" stroke-width="1"/>
+    <text x="150" y="50" text-anchor="middle" fill="#fff" font-size="14" font-weight="bold">Tier表をリセットしますか？</text>
+    <text x="150" y="75" text-anchor="middle" fill="#aaa" font-size="11">すべてのアイテムと設定が初期状態に戻ります。</text>
+    <text x="150" y="92" text-anchor="middle" fill="#aaa" font-size="11">この操作は取り消せません。</text>
+
+    <rect x="60" y="108" width="80" height="28" rx="4" fill="#333" stroke="#555" stroke-width="1"/>
+    <text x="100" y="127" text-anchor="middle" fill="#aaa" font-size="11">キャンセル</text>
+
+    <rect x="160" y="108" width="80" height="28" rx="4" fill="#e94560"/>
+    <text x="200" y="127" text-anchor="middle" fill="#fff" font-size="11">リセット</text>
+  </g>
+
+  <!-- ====== 4. URL共有通知（ローカル画像警告） ====== -->
+  <g transform="translate(30, 280)">
+    <text x="0" y="0" fill="#aaa" font-size="13" font-weight="bold">4. URL共有時のローカル画像警告（トースト通知）</text>
+    <rect x="0" y="15" width="440" height="60" rx="8" fill="#332800" stroke="#FFA94D" stroke-width="1"/>
+    <text x="15" y="38" fill="#FFA94D" font-size="12" font-weight="bold">⚠ ローカル画像 2 件は共有URLに含まれません</text>
+    <text x="15" y="58" fill="#cca050" font-size="10">画像として保存すればすべてのアイテムを共有できます。</text>
+    <text x="420" y="28" text-anchor="end" fill="#888" font-size="10">×</text>
+  </g>
+
+  <!-- ====== 5. URL長制限警告 ====== -->
+  <g transform="translate(30, 370)">
+    <text x="0" y="0" fill="#aaa" font-size="13" font-weight="bold">5. URL長制限警告（トースト通知）</text>
+    <rect x="0" y="15" width="440" height="45" rx="8" fill="#330000" stroke="#e94560" stroke-width="1"/>
+    <text x="15" y="38" fill="#e94560" font-size="12" font-weight="bold">❌ アイテムが多すぎます</text>
+    <text x="15" y="52" fill="#cc5050" font-size="10">URLでの共有上限を超えています。画像として保存してください。</text>
+  </g>
+
+  <!-- ====== 6. アイテムカード詳細 ====== -->
+  <g transform="translate(530, 280)">
+    <text x="0" y="0" fill="#aaa" font-size="13" font-weight="bold">6. アイテムカード（状態バリエーション）</text>
+
+    <!-- 通常状態 -->
+    <rect x="0" y="20" width="64" height="80" rx="4" fill="#333" stroke="#555" stroke-width="1"/>
+    <rect x="4" y="24" width="56" height="56" rx="2" fill="#444"/>
+    <text x="32" y="56" text-anchor="middle" fill="#888" font-size="10">IMG</text>
+    <text x="32" y="92" text-anchor="middle" fill="#aaa" font-size="8">ラベル</text>
+    <text x="32" y="115" text-anchor="middle" fill="#555" font-size="9">通常</text>
+
+    <!-- ドラッグ中 -->
+    <rect x="80" y="18" width="68" height="84" rx="4" fill="#333" stroke="#0f3460" stroke-width="2" opacity="0.8"/>
+    <rect x="84" y="22" width="56" height="56" rx="2" fill="#444"/>
+    <text x="112" y="54" text-anchor="middle" fill="#888" font-size="10">IMG</text>
+    <text x="112" y="92" text-anchor="middle" fill="#aaa" font-size="8">ラベル</text>
+    <text x="112" y="115" text-anchor="middle" fill="#0f3460" font-size="9">ドラッグ中</text>
+    <!-- 影 -->
+    <rect x="84" y="22" width="68" height="84" rx="4" fill="none" stroke="#0f3460" stroke-width="1" opacity="0.3" transform="translate(3,3)"/>
+
+    <!-- ローカル画像 -->
+    <rect x="170" y="20" width="64" height="80" rx="4" fill="#333" stroke="#FFA94D" stroke-width="1"/>
+    <rect x="174" y="24" width="56" height="56" rx="2" fill="#444"/>
+    <text x="202" y="56" text-anchor="middle" fill="#888" font-size="10">IMG</text>
+    <text x="202" y="92" text-anchor="middle" fill="#aaa" font-size="8">ラベル</text>
+    <!-- ローカルバッジ -->
+    <rect x="210" y="22" width="22" height="14" rx="3" fill="#FFA94D"/>
+    <text x="221" y="33" text-anchor="middle" fill="#333" font-size="8">🔒</text>
+    <text x="202" y="115" text-anchor="middle" fill="#FFA94D" font-size="9">ローカル</text>
+
+    <!-- ホバー（削除ボタン表示） -->
+    <rect x="260" y="20" width="64" height="80" rx="4" fill="#333" stroke="#aaa" stroke-width="1"/>
+    <rect x="264" y="24" width="56" height="56" rx="2" fill="#444"/>
+    <text x="292" y="56" text-anchor="middle" fill="#888" font-size="10">IMG</text>
+    <text x="292" y="92" text-anchor="middle" fill="#aaa" font-size="8">ラベル</text>
+    <!-- 削除ボタン -->
+    <circle cx="318" cy="26" r="8" fill="#e94560"/>
+    <text x="318" y="30" text-anchor="middle" fill="#fff" font-size="9">×</text>
+    <text x="292" y="115" text-anchor="middle" fill="#aaa" font-size="9">ホバー</text>
+  </g>
+
+  <!-- ====== 7. 画像アップロードタブ ====== -->
+  <g transform="translate(30, 440)">
+    <text x="0" y="0" fill="#aaa" font-size="13" font-weight="bold">7. 画像アップロードUI</text>
+    <rect x="0" y="15" width="440" height="120" rx="8" fill="#16213e" stroke="#0f3460" stroke-width="1"/>
+
+    <!-- タブ -->
+    <rect x="10" y="25" width="80" height="24" rx="4" fill="#2a2a3e" stroke="#555" stroke-width="1"/>
+    <text x="50" y="41" text-anchor="middle" fill="#aaa" font-size="9">🔗 URL追加</text>
+    <rect x="94" y="25" width="100" height="24" rx="4" fill="#0f3460"/>
+    <text x="144" y="41" text-anchor="middle" fill="#fff" font-size="9">📁 画像アップロード</text>
+
+    <!-- ドロップゾーン -->
+    <rect x="10" y="58" width="420" height="68" rx="4" fill="#1a1a2e" stroke="#555" stroke-width="1" stroke-dasharray="6,3"/>
+    <text x="220" y="86" text-anchor="middle" fill="#888" font-size="12">📁 ファイルをドロップ、またはクリックして選択</text>
+    <text x="220" y="104" text-anchor="middle" fill="#555" font-size="10">PNG, JPG, GIF, WebP（最大5MB/枚）</text>
+  </g>
+
+  <!-- ====== 8. 閲覧モード（共有URL表示） ====== -->
+  <g transform="translate(530, 440)">
+    <text x="0" y="0" fill="#aaa" font-size="13" font-weight="bold">8. 閲覧モード（共有URLアクセス時）</text>
+    <rect x="0" y="15" width="400" height="120" rx="8" fill="#16213e" stroke="#0f3460" stroke-width="1"/>
+
+    <!-- 閲覧モードバナー -->
+    <rect x="10" y="25" width="380" height="30" rx="4" fill="#0f3460"/>
+    <text x="200" y="45" text-anchor="middle" fill="#fff" font-size="11">👀 共有されたTier表を閲覧中</text>
+
+    <!-- ボタン -->
+    <rect x="10" y="65" width="120" height="28" rx="4" fill="#0f3460"/>
+    <text x="70" y="84" text-anchor="middle" fill="#fff" font-size="10">📷 画像として保存</text>
+
+    <rect x="140" y="65" width="160" height="28" rx="4" fill="#69DB7C"/>
+    <text x="220" y="84" text-anchor="middle" fill="#333" font-size="10">✏️ コピーして編集する</text>
+
+    <text x="200" y="120" text-anchor="middle" fill="#555" font-size="9">※ 閲覧モードではD&D・編集は無効</text>
+  </g>
+</svg>
