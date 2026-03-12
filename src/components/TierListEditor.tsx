@@ -239,15 +239,24 @@ export function TierListEditor() {
       {/* デバッグ表示トグル */}
       {!isViewMode && (
         <div className="bg-[#111] px-4 py-1 text-right">
-          <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-[#888]">
-            <input
-              type="checkbox"
-              checked={showDebugOverlay}
-              onChange={(e) => setShowDebugOverlay(e.target.checked)}
-              className="accent-[#e94560]"
-            />
+          <button
+            type="button"
+            onClick={() => setShowDebugOverlay((v) => !v)}
+            className="inline-flex cursor-pointer items-center gap-2 text-xs text-[#888]"
+          >
+            <span
+              className={`relative inline-block h-5 w-9 rounded-full transition-colors ${
+                showDebugOverlay ? "bg-[#e94560]" : "bg-[#555]"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
+                  showDebugOverlay ? "translate-x-4" : "translate-x-0"
+                }`}
+              />
+            </span>
             編集UI表示（🎨🔒）
-          </label>
+          </button>
         </div>
       )}
 
