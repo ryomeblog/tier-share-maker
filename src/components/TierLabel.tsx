@@ -77,7 +77,7 @@ export function TierLabel({
             setEditValue(name);
             setIsEditing(true);
           }}
-          className="cursor-text text-lg font-bold text-white md:text-2xl"
+          className="cursor-text break-all text-lg font-bold text-white md:text-2xl"
           title="クリックで名前を変更"
         >
           {name}
