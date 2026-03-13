@@ -11,7 +11,8 @@ export async function generateMetadata({
   const { data } = await searchParams;
 
   if (data) {
-    const ogImageUrl = `/api/og?data=${data}`;
+    // +をエンコードしてquery paramで+がスペースに変換される問題を回避
+    const ogImageUrl = `/api/og?data=${encodeURIComponent(data)}`;
     return {
       title: "Tier List Maker",
       description: "Tier List Makerで作成",
