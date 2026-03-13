@@ -15,7 +15,7 @@ import {
   type DragOverEvent,
 } from "@dnd-kit/core";
 import type { Item } from "@/types/tier";
-import { DEFAULT_STATE, POOL_ID, MAX_TITLE_LENGTH } from "@/lib/constants";
+import { DEFAULT_STATE, POOL_ID, TRASH_ID, MAX_TITLE_LENGTH } from "@/lib/constants";
 import { tierListReducer } from "@/lib/reducer";
 import { getDataFromUrl, decodeUrlToState } from "@/lib/share";
 import { TierRowComponent } from "./TierRowComponent";
@@ -143,6 +143,13 @@ export function TierListEditor() {
 
     const activeId = active.id as string;
     const overId = over.id as string;
+
+    // ゴミ箱にドロップ → アイテム削除
+    if (overId === TRASH_ID) {
+      dispatch({ type: "REMOVE_ITEM", payload: { itemId: activeId } });
+      return;
+    }
+
     if (activeId === overId) return;
 
     const activeContainer = findContainer(activeId);
@@ -270,14 +277,14 @@ export function TierListEditor() {
       )}
 
       {/* メインコンテンツ */}
-      <main className="mx-auto max-w-6xl px-4 py-4">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={rectIntersection}
-          onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDragEnd={handleDragEnd}
-        >
+      <DndContext
+        sensors={sensors}
+        collisionDetection={rectIntersection}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+      >
+        <main className="mx-auto max-w-6xl px-4 py-4 pb-52">
           {/* Tierエリア（画像キャプチャ対象） */}
           <div ref={tierAreaRef} className="space-y-1 md:space-y-1.5">
             {state.tiers.map((tier) => (
@@ -318,9 +325,11 @@ export function TierListEditor() {
               ＋ Tier を追加
             </button>
           )}
+        </main>
 
-          {/* プールエリア */}
-          <div className="mt-4">
+        {/* プールエリア（画面下部固定） */}
+        <div className="fixed right-0 bottom-0 left-0 z-40 border-t border-[#0f3460] bg-[#1a1a2e]">
+          <div className="mx-auto max-w-6xl px-4 py-2">
             <ItemPool
               items={state.pool}
               onAddItem={(item) =>
@@ -333,15 +342,15 @@ export function TierListEditor() {
               showDebugOverlay={showDebugOverlay}
             />
           </div>
+        </div>
 
-          {/* ドラッグオーバーレイ */}
-          <DragOverlay>
-            {activeItem ? (
-              <ItemCard item={activeItem} onRemove={() => {}} isDragOverlay />
-            ) : null}
-          </DragOverlay>
-        </DndContext>
-      </main>
+        {/* ドラッグオーバーレイ */}
+        <DragOverlay>
+          {activeItem ? (
+            <ItemCard item={activeItem} onRemove={() => {}} isDragOverlay />
+          ) : null}
+        </DragOverlay>
+      </DndContext>
 
       {/* フッター */}
       <footer className="mt-8 border-t border-[#0f3460] bg-[#16213e] py-3 text-center text-xs text-[#555]">

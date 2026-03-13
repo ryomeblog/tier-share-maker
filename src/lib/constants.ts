@@ -16,6 +16,7 @@ export const DEFAULT_STATE: TierListState = {
 };
 
 export const POOL_ID = "pool";
+export const TRASH_ID = "trash";
 
 // 制約値
 export const MAX_TIERS = 20;

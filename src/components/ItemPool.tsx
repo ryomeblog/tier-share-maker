@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { useDroppable } from "@dnd-kit/core";
+import { useDroppable, useDndContext } from "@dnd-kit/core";
 import { SortableContext, rectSortingStrategy } from "@dnd-kit/sortable";
 import { nanoid } from "nanoid";
 import type { Item } from "@/types/tier";
-import { POOL_ID, MAX_LOCAL_IMAGE_SIZE } from "@/lib/constants";
+import { POOL_ID, TRASH_ID, MAX_LOCAL_IMAGE_SIZE } from "@/lib/constants";
 import { ItemCard } from "./ItemCard";
 
 interface ItemPoolProps {
@@ -17,6 +17,27 @@ interface ItemPoolProps {
 }
 
 type Tab = "url" | "upload";
+
+function TrashZone() {
+  const { active } = useDndContext();
+  const { setNodeRef, isOver } = useDroppable({ id: TRASH_ID });
+
+  if (!active) return null;
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`flex w-16 shrink-0 flex-col items-center justify-center rounded border-2 border-dashed transition-colors ${
+        isOver
+          ? "border-[#e94560] bg-[#e94560]/20 text-[#e94560]"
+          : "border-[#555] text-[#555]"
+      }`}
+    >
+      <span className="text-xl">🗑</span>
+      <span className="text-[10px]">削除</span>
+    </div>
+  );
+}
 
 export function ItemPool({
   items,
@@ -132,7 +153,7 @@ export function ItemPool({
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") handleAddUrl();
+                  if (e.key === "Enter" && !e.nativeEvent.isComposing) handleAddUrl();
                 }}
                 placeholder="https://example.com/image.png"
                 className="flex-1 rounded border border-[#333] bg-[#1a1a2e] px-3 py-1.5 text-sm text-white placeholder-[#555] outline-none focus:border-[#0f3460]"
@@ -142,7 +163,7 @@ export function ItemPool({
                 value={labelInput}
                 onChange={(e) => setLabelInput(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") handleAddUrl();
+                  if (e.key === "Enter" && !e.nativeEvent.isComposing) handleAddUrl();
                 }}
                 placeholder="ラベル（任意）"
                 className="w-full rounded border border-[#333] bg-[#1a1a2e] px-3 py-1.5 text-sm text-white placeholder-[#555] outline-none focus:border-[#0f3460] md:w-32"
@@ -181,35 +202,40 @@ export function ItemPool({
         </div>
       )}
 
-      {/* プール内アイテム */}
-      <SortableContext
-        id={POOL_ID}
-        items={items.map((i) => i.id)}
-        strategy={rectSortingStrategy}
-      >
-        <div
-          ref={setNodeRef}
-          className={`flex min-h-[48px] flex-wrap gap-1.5 rounded p-1 md:gap-2 ${
-            isOver ? "bg-blue-500/10" : ""
-          }`}
+      {/* プール内アイテム + ゴミ箱 */}
+      <div className="flex gap-2">
+        <SortableContext
+          id={POOL_ID}
+          items={items.map((i) => i.id)}
+          strategy={rectSortingStrategy}
         >
-          {items.map((item) => (
-            <ItemCard
-              key={item.id}
-              item={item}
-              onRemove={onRemoveItem}
-              showDebugOverlay={showDebugOverlay}
-            />
-          ))}
-          {items.length === 0 && (
-            <span className="flex w-full items-center justify-center py-2 text-xs text-[#555]">
-              {isViewMode
-                ? "未配置アイテムなし"
-                : "上からアイテムを追加してください"}
-            </span>
-          )}
-        </div>
-      </SortableContext>
+          <div
+            ref={setNodeRef}
+            className={`flex min-h-[48px] flex-1 flex-wrap gap-1.5 rounded p-1 md:gap-2 ${
+              isOver ? "bg-blue-500/10" : ""
+            }`}
+          >
+            {items.map((item) => (
+              <ItemCard
+                key={item.id}
+                item={item}
+                onRemove={onRemoveItem}
+                showDebugOverlay={showDebugOverlay}
+              />
+            ))}
+            {items.length === 0 && (
+              <span className="flex w-full items-center justify-center py-2 text-xs text-[#555]">
+                {isViewMode
+                  ? "未配置アイテムなし"
+                  : "上からアイテムを追加してください"}
+              </span>
+            )}
+          </div>
+        </SortableContext>
+
+        {/* ゴミ箱ドロップゾーン（ドラッグ中のみ表示） */}
+        <TrashZone />
+      </div>
     </div>
   );
 }
