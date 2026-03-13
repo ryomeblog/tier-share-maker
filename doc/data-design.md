@@ -1,5 +1,7 @@
 # データ設計書
 
+**更新日:** 2026年3月13日
+
 ## 1. 型定義
 
 ### 1.1 コアデータ型
@@ -10,8 +12,8 @@ type ItemSource = "url" | "local";
 
 // アイテム（Tier表に配置される画像1つ）
 interface Item {
-  id: string;          // ユニークID（例: "item-xxxx"）nanoid等で生成
-  url: string;         // 画像URL（外部URL or blob: or data:）
+  id: string;          // ユニークID（nanoidで生成）
+  url: string;         // 画像URL（外部URL or blob:）
   label?: string;      // 任意ラベル（最大20文字）
   source: ItemSource;  // "url" = 外部URL, "local" = ローカルファイル
 }
@@ -57,6 +59,24 @@ interface SharedItem {
 }
 ```
 
+### 1.3 OGP用データ型
+
+```typescript
+// OGPエンドポイント内部で使用（/api/og/route.tsx）
+interface OgTier {
+  name: string;
+  color: string;
+  items: { id: string; url: string; label?: string }[];
+}
+
+// 画像デコード結果
+interface DecodedImage {
+  width: number;
+  height: number;
+  data: Uint8Array;  // RGBA pixel data
+}
+```
+
 ---
 
 ## 2. デフォルト値
@@ -76,6 +96,8 @@ const DEFAULT_STATE: TierListState = {
   tiers: DEFAULT_TIERS,
   pool: [],
 };
+
+const POOL_ID = "pool";
 ```
 
 ---
@@ -88,8 +110,8 @@ type TierListAction =
   | { type: "REMOVE_ITEM"; payload: { itemId: string } }
   | { type: "MOVE_ITEM"; payload: {
       itemId: string;
-      from: { containerId: string; index: number };
-      to: { containerId: string; index: number };
+      toContainerId: string;
+      toIndex: number;
     }}
   | { type: "ADD_TIER"; payload?: { name?: string; color?: string } }
   | { type: "REMOVE_TIER"; payload: { tierId: string } }
@@ -122,14 +144,15 @@ JSON文字列
   ↓ lz-string compressToEncodedURIComponent()
 圧縮文字列
   ↓ URL組み立て
-https://domain.com/?data=<圧縮文字列>#<圧縮文字列>
+https://domain/?data=<圧縮文字列>#<圧縮文字列>
 ```
 
-### 4.2 デコードフロー
+### 4.2 デコードフロー（クライアント側）
 
 ```
 URL
-  ↓ window.location.hash から "#" 以降を取得
+  ↓ window.location.hash から "#" 以降を取得（優先）
+  ↓ fallback: searchParams.get("data")
 圧縮文字列
   ↓ lz-string decompressFromEncodedURIComponent()
 JSON文字列
@@ -139,18 +162,19 @@ SharedTierData
 TierListState
 ```
 
-### 4.3 バリデーションルール
+### 4.3 デコードフロー（OGPエンドポイント）
 
-```typescript
-function validateSharedData(data: unknown): data is SharedTierData {
-  // 1. オブジェクトであること
-  // 2. title: string（最大50文字）
-  // 3. tiers: 配列（最大20行）
-  //    - 各tier: id, name(最大20文字), color(HEX), items(配列)
-  //    - 各item: id, url(https://のみ, 最大2000文字), label?(最大20文字)
-  // 4. pool: 配列
-  // 5. 全アイテム合計100個以下
-}
+```
+Request URL
+  ↓ 生URLから正規表現で ?data= パラメータ抽出
+  ↓ （searchParams.get()は+をスペースに変換するため不使用）
+  ↓ decodeURIComponent()
+圧縮文字列
+  ↓ 自前実装 decompressFromEncodedURIComponent()
+  ↓ （CF Workersでlz-string npm importが失敗するため）
+JSON文字列
+  ↓ JSON.parse() + バリデーション
+{ title, tiers: OgTier[] }
 ```
 
 ---
@@ -163,7 +187,7 @@ function validateSharedData(data: unknown): data is SharedTierData {
 GET /api/og?data=<compressedData>
 
 Request:
-  Query: data = lz-string圧縮文字列
+  Query: data = lz-string圧縮文字列（+は%2Bでエンコード）
 
 Response:
   Content-Type: image/png
@@ -171,110 +195,79 @@ Response:
   Body: 1200x630 PNG画像
 
 処理フロー:
-  1. query.data を decompressFromEncodedURIComponent()
-  2. JSON.parse → SharedTierData
-  3. 各アイテムのURLからfetchで画像取得 → Base64変換
-  4. Satori で JSXテンプレート → SVG
-  5. @resvg/resvg-wasm で SVG → PNG
-  6. レスポンス返却
-```
+  1. 生URLから正規表現でdataパラメータ抽出 → decodeURIComponent
+  2. 自前lz-stringデコンプレッサでJSON復元
+  3. 各アイテムのURLからfetch()で画像取得（並列、最大10枚、3秒タイムアウト）
+  4. PNG: 自前デコーダ（zlib.inflateSync）/ JPEG: jpeg-jsでデコード
+  5. center cropでリサイズ → RGBピクセルバッファに合成
+  6. ビットマップフォントでタイトル・ラベル・フッター描画
+  7. zlib.deflateSync でPNGエンコード → レスポンス返却
 
-### 5.2 CORSプロキシ `/api/proxy-image`
-
-```
-GET /api/proxy-image?url=<encodedImageURL>
-
-Request:
-  Query: url = encodeURIComponent(画像URL)
-
-Response:
-  Content-Type: (元画像のContent-Typeを転送)
-  Cache-Control: public, max-age=86400
-  Body: 画像バイナリ
-
-バリデーション:
-  - url が https:// で始まること
-  - Content-Type が image/* であること
-  - レスポンスサイズ 5MB 以下
-  - 同一IPから毎分60リクエスト以下
+エラー時:
+  フォールバック画像（デフォルトTier構成のPNG）を返却
 ```
 
 ---
 
 ## 6. 制約・上限値一覧
 
-| 項目 | 上限値 | 理由 |
+| 項目 | 上限値 | 定数名 |
 |---|---|---|
-| Tier行数 | 20行 | UI表示上限 |
-| アイテム合計数 | 100個 | URL長・パフォーマンス |
-| Tier名文字数 | 20文字 | UI表示幅 |
-| タイトル文字数 | 50文字 | OGP表示幅 |
-| ラベル文字数 | 20文字 | カード表示幅 |
-| 画像URL長 | 2,000文字 | URL共有上限 |
-| 共有URL全体長 | 約8,000文字 | ブラウザ上限 |
-| ローカル画像サイズ | 5MB/枚 | メモリ制約 |
-| プロキシ画像サイズ | 5MB | Workers制約 |
-| プロキシレート | 60 req/min/IP | 悪用防止 |
+| Tier行数 | 20行 | MAX_TIERS |
+| アイテム合計数 | 100個 | MAX_ITEMS |
+| Tier名文字数 | 20文字 | MAX_TIER_NAME_LENGTH |
+| タイトル文字数 | 50文字 | MAX_TITLE_LENGTH |
+| ラベル文字数 | 20文字 | MAX_LABEL_LENGTH |
+| 画像URL長 | 2,000文字 | MAX_IMAGE_URL_LENGTH |
+| 共有URL全体長 | 約8,000文字 | MAX_SHARE_URL_LENGTH |
+| ローカル画像サイズ | 5MB/枚 | MAX_LOCAL_IMAGE_SIZE |
+| OGP画像fetchタイムアウト | 3秒/枚 | ハードコード |
+| OGP画像fetchサイズ上限 | 5MB/枚 | ハードコード |
+| OGP画像fetch最大枚数 | 10枚 | ハードコード |
 
 ---
 
-## 7. 画面遷移・状態フロー
-
-```
-                    ┌─────────────┐
-                    │   初回アクセス  │
-                    │  (hash なし)  │
-                    └──────┬──────┘
-                           │
-                           ▼
-                    ┌─────────────┐
-                    │  編集モード    │
-                    │ (新規作成)    │
-                    └──────┬──────┘
-                           │
-              ┌────────────┼────────────┐
-              ▼            ▼            ▼
-       ┌────────────┐ ┌────────┐ ┌─────────┐
-       │ URLをコピー  │ │ 画像保存 │ │ リセット  │
-       │ →クリップ   │ │ →PNG   │ │ →初期化  │
-       │  ボード     │ │ ダウン   │ │         │
-       └────────────┘ │ ロード   │ └─────────┘
-                      └────────┘
-
-        ┌─────────────┐
-        │ 共有URLアクセス │
-        │ (hash あり)   │
-        └──────┬──────┘
-               │
-               ▼
-        ┌─────────────┐
-        │  閲覧モード    │───→「コピーして編集」
-        │ (読み取り専用) │     → 編集モードへ遷移
-        └─────────────┘
-```
-
----
-
-## 8. dnd-kit コンテナ構成
+## 7. dnd-kit コンテナ構成
 
 ```
 DndContext
-├── SortableContext (pool)         containerId="pool"
-│   └── SortableItem × n
-├── SortableContext (tier-s)       containerId="tier-s"
-│   └── SortableItem × n
-├── SortableContext (tier-a)       containerId="tier-a"
-│   └── SortableItem × n
-├── ... (各Tier行ごとにSortableContext)
-└── DragOverlay
-    └── ItemCard (ドラッグ中のプレビュー)
+  sensors: [MouseSensor(distance:5), TouchSensor(delay:250, tolerance:8), KeyboardSensor]
+  collisionDetection: rectIntersection
+  ├── useDroppable (tier-s) + SortableContext
+  │   └── useSortable(ItemCard) × n  [touch-action: none]
+  ├── useDroppable (tier-a) + SortableContext
+  │   └── useSortable(ItemCard) × n
+  ├── ...
+  ├── SortableContext (pool)
+  │   └── useSortable(ItemCard) × n
+  └── DragOverlay
+      └── ItemCard（ドラッグ中プレビュー）
 ```
 
 ### ドラッグイベントハンドラ
 
-```typescript
-// onDragStart: ドラッグ開始 → activeId をセット
-// onDragOver:  コンテナ間移動 → MOVE_ITEM dispatch（暫定移動）
-// onDragEnd:   ドロップ確定 → MOVE_ITEM dispatch（最終位置）
-// onDragCancel: キャンセル → 元の位置に戻す
-```
+- `onDragStart`: activeItemをセット（findItem）
+- `onDragOver`: コンテナ間移動 → MOVE_ITEM dispatch
+- `onDragEnd`: 同一コンテナ内並び替え → MOVE_ITEM dispatch、activeItemクリア
+
+---
+
+## 8. カラーパレット
+
+### テーマカラー
+
+| 用途 | カラーコード |
+|---|---|
+| 背景（メイン） | `#1a1a2e` |
+| 背景（ヘッダー/フッター） | `#16213e` |
+| 背景（Tierコンテンツ） | `#2a2a3e` |
+| アクセント | `#e94560` |
+| プライマリボタン | `#0f3460` |
+| テキスト（メイン） | `#ffffff` |
+| テキスト（サブ） | `#aaaaaa` |
+| テキスト（プレースホルダー） | `#555555` |
+| ボーダー | `#333333` |
+
+### Tier背景色プリセット
+
+`#FF6B6B`, `#FFA94D`, `#FFD43B`, `#69DB7C`, `#74C0FC`, `#B197FC`, `#FF8787`, `#DA77F2`
