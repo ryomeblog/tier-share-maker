@@ -22,13 +22,13 @@ export interface TierListState {
 
 // URL共有用（source: "local" を除外した構造）
 export interface SharedItem {
-  id: string;
+  id?: string;
   url: string;
   label?: string;
 }
 
 export interface SharedTierRow {
-  id: string;
+  id?: string;
   name: string;
   color: string;
   items: SharedItem[];

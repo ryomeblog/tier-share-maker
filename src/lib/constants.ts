@@ -24,7 +24,7 @@ export const MAX_TIER_NAME_LENGTH = 20;
 export const MAX_TITLE_LENGTH = 50;
 export const MAX_LABEL_LENGTH = 20;
 export const MAX_IMAGE_URL_LENGTH = 2000;
-export const MAX_SHARE_URL_LENGTH = 8000;
+export const MAX_SHARE_URL_LENGTH = 32000;
 export const MAX_LOCAL_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 
 // Tierに追加する際のデフォルトカラーパレット

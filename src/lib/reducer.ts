@@ -179,10 +179,22 @@ export function tierListReducer(
       return {
         title: data.title,
         tiers: data.tiers.map((t) => ({
-          ...t,
-          items: t.items.map((i) => ({ ...i, source: "url" as const })),
+          id: t.id || `tier-${nanoid(6)}`,
+          name: t.name,
+          color: t.color,
+          items: t.items.map((i) => ({
+            id: i.id || nanoid(),
+            url: i.url,
+            ...(i.label ? { label: i.label } : {}),
+            source: "url" as const,
+          })),
         })),
-        pool: data.pool.map((i) => ({ ...i, source: "url" as const })),
+        pool: data.pool.map((i) => ({
+          id: i.id || nanoid(),
+          url: i.url,
+          ...(i.label ? { label: i.label } : {}),
+          source: "url" as const,
+        })),
       };
     }
 
