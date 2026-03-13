@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://tier-share-maker.ryome-blog.workers.dev"),
   title: "Tier List Maker",
   description: "ブラウザ上でTier表を作成・共有できるアプリ",
   openGraph: {
