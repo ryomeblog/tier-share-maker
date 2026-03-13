@@ -56,7 +56,7 @@ export function ItemCard({
   return (
     <div
       ref={setNodeRef}
-      style={style}
+      style={{ ...style, touchAction: "none" }}
       {...attributes}
       {...listeners}
       className={`group relative h-16 w-16 shrink-0 cursor-grab rounded border bg-[#333] active:cursor-grabbing ${

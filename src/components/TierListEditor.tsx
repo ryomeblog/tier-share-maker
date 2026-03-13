@@ -5,8 +5,9 @@ import {
   DndContext,
   DragOverlay,
   rectIntersection,
-  PointerSensor,
+  MouseSensor,
   TouchSensor,
+  KeyboardSensor,
   useSensor,
   useSensors,
   type DragStartEvent,
@@ -53,12 +54,13 @@ export function TierListEditor() {
     }
   }, [isEditingTitle]);
 
-  // D&Dセンサー設定
+  // D&Dセンサー設定（Mouse/Touch/Keyboardを分離してタッチデバイス対応）
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, {
-      activationConstraint: { delay: 200, tolerance: 5 },
+      activationConstraint: { delay: 250, tolerance: 8 },
     }),
+    useSensor(KeyboardSensor),
   );
 
   // activeItemを全コンテナから探す
