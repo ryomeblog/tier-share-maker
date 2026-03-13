@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { deflateSync } from "zlib";
+import { deflateSync, inflateSync } from "zlib";
+import * as jpeg from "jpeg-js";
 
 // runtime removed - let OpenNext handle it
 
@@ -218,6 +219,283 @@ const DEFAULT_TIERS: OgTier[] = [
   { name: "E", color: "#B197FC", items: [] },
 ];
 
+// --- 画像デコード ---
+
+interface DecodedImage {
+  width: number;
+  height: number;
+  // RGBA pixel data
+  data: Uint8Array;
+}
+
+// PNG デコーダー (zlib.inflateSync使用)
+function decodePng(buf: Uint8Array): DecodedImage | null {
+  try {
+    // PNG signature check
+    if (
+      buf[0] !== 137 ||
+      buf[1] !== 80 ||
+      buf[2] !== 78 ||
+      buf[3] !== 71
+    ) {
+      return null;
+    }
+
+    let offset = 8;
+    let width = 0;
+    let height = 0;
+    let bitDepth = 0;
+    let colorType = 0;
+    const idatChunks: Uint8Array[] = [];
+
+    while (offset < buf.length) {
+      const chunkLen =
+        (buf[offset] << 24) |
+        (buf[offset + 1] << 16) |
+        (buf[offset + 2] << 8) |
+        buf[offset + 3];
+      const chunkType = String.fromCharCode(
+        buf[offset + 4],
+        buf[offset + 5],
+        buf[offset + 6],
+        buf[offset + 7],
+      );
+
+      if (chunkType === "IHDR") {
+        width =
+          (buf[offset + 8] << 24) |
+          (buf[offset + 9] << 16) |
+          (buf[offset + 10] << 8) |
+          buf[offset + 11];
+        height =
+          (buf[offset + 12] << 24) |
+          (buf[offset + 13] << 16) |
+          (buf[offset + 14] << 8) |
+          buf[offset + 15];
+        bitDepth = buf[offset + 16];
+        colorType = buf[offset + 17];
+      } else if (chunkType === "IDAT") {
+        idatChunks.push(buf.slice(offset + 8, offset + 8 + chunkLen));
+      } else if (chunkType === "IEND") {
+        break;
+      }
+
+      offset += 12 + chunkLen;
+    }
+
+    if (width === 0 || height === 0 || bitDepth !== 8) return null;
+
+    // Combine IDAT chunks and inflate
+    const totalLen = idatChunks.reduce((s, c) => s + c.length, 0);
+    const combined = new Uint8Array(totalLen);
+    let pos = 0;
+    for (const chunk of idatChunks) {
+      combined.set(chunk, pos);
+      pos += chunk.length;
+    }
+
+    const inflated = new Uint8Array(inflateSync(Buffer.from(combined)));
+
+    // Determine bytes per pixel
+    let bpp: number;
+    switch (colorType) {
+      case 0:
+        bpp = 1;
+        break; // Grayscale
+      case 2:
+        bpp = 3;
+        break; // RGB
+      case 4:
+        bpp = 2;
+        break; // Grayscale+Alpha
+      case 6:
+        bpp = 4;
+        break; // RGBA
+      default:
+        return null; // Palette not supported
+    }
+
+    const scanlineLen = width * bpp;
+    const rgba = new Uint8Array(width * height * 4);
+
+    // Previous row for filter reconstruction
+    const prevRow = new Uint8Array(scanlineLen);
+    const curRow = new Uint8Array(scanlineLen);
+
+    let inflatedOffset = 0;
+
+    for (let y = 0; y < height; y++) {
+      const filterType = inflated[inflatedOffset++];
+      const rawRow = inflated.slice(
+        inflatedOffset,
+        inflatedOffset + scanlineLen,
+      );
+      inflatedOffset += scanlineLen;
+
+      // Reconstruct filtered row
+      for (let x = 0; x < scanlineLen; x++) {
+        const a = x >= bpp ? curRow[x - bpp] : 0;
+        const b = prevRow[x];
+        const c2 = x >= bpp ? prevRow[x - bpp] : 0;
+        let val = rawRow[x];
+
+        switch (filterType) {
+          case 0:
+            break; // None
+          case 1:
+            val = (val + a) & 0xff;
+            break; // Sub
+          case 2:
+            val = (val + b) & 0xff;
+            break; // Up
+          case 3:
+            val = (val + ((a + b) >> 1)) & 0xff;
+            break; // Average
+          case 4:
+            val = (val + paethPredictor(a, b, c2)) & 0xff;
+            break; // Paeth
+        }
+        curRow[x] = val;
+      }
+
+      // Convert to RGBA
+      for (let x = 0; x < width; x++) {
+        const dstIdx = (y * width + x) * 4;
+        switch (colorType) {
+          case 0: // Grayscale
+            rgba[dstIdx] = rgba[dstIdx + 1] = rgba[dstIdx + 2] = curRow[x];
+            rgba[dstIdx + 3] = 255;
+            break;
+          case 2: // RGB
+            rgba[dstIdx] = curRow[x * 3];
+            rgba[dstIdx + 1] = curRow[x * 3 + 1];
+            rgba[dstIdx + 2] = curRow[x * 3 + 2];
+            rgba[dstIdx + 3] = 255;
+            break;
+          case 4: // Grayscale+Alpha
+            rgba[dstIdx] =
+              rgba[dstIdx + 1] =
+              rgba[dstIdx + 2] =
+                curRow[x * 2];
+            rgba[dstIdx + 3] = curRow[x * 2 + 1];
+            break;
+          case 6: // RGBA
+            rgba[dstIdx] = curRow[x * 4];
+            rgba[dstIdx + 1] = curRow[x * 4 + 1];
+            rgba[dstIdx + 2] = curRow[x * 4 + 2];
+            rgba[dstIdx + 3] = curRow[x * 4 + 3];
+            break;
+        }
+      }
+
+      prevRow.set(curRow);
+    }
+
+    return { width, height, data: rgba };
+  } catch {
+    return null;
+  }
+}
+
+function paethPredictor(a: number, b: number, c: number): number {
+  const p = a + b - c;
+  const pa = Math.abs(p - a);
+  const pb = Math.abs(p - b);
+  const pc = Math.abs(p - c);
+  if (pa <= pb && pa <= pc) return a;
+  if (pb <= pc) return b;
+  return c;
+}
+
+// JPEG デコーダー (jpeg-js使用)
+function decodeJpeg(buf: Uint8Array): DecodedImage | null {
+  try {
+    const result = jpeg.decode(buf, { useTArray: true, maxMemoryUsageInMB: 32 });
+    return {
+      width: result.width,
+      height: result.height,
+      data: result.data,
+    };
+  } catch {
+    return null;
+  }
+}
+
+// 画像バイナリからデコード
+function decodeImage(buf: Uint8Array): DecodedImage | null {
+  // PNG check
+  if (buf[0] === 137 && buf[1] === 80 && buf[2] === 78 && buf[3] === 71) {
+    return decodePng(buf);
+  }
+  // JPEG check (SOI marker)
+  if (buf[0] === 0xff && buf[1] === 0xd8) {
+    return decodeJpeg(buf);
+  }
+  return null;
+}
+
+// 画像をリサイズしてRGBAピクセルデータを返す (nearest neighbor)
+function resizeImage(
+  img: DecodedImage,
+  targetW: number,
+  targetH: number,
+): DecodedImage {
+  const data = new Uint8Array(targetW * targetH * 4);
+  // center crop して resize
+  const srcAspect = img.width / img.height;
+  const dstAspect = targetW / targetH;
+  let srcX = 0,
+    srcY = 0,
+    srcW = img.width,
+    srcH = img.height;
+
+  if (srcAspect > dstAspect) {
+    // ソースが横長 → 左右をクロップ
+    srcW = Math.floor(img.height * dstAspect);
+    srcX = Math.floor((img.width - srcW) / 2);
+  } else {
+    // ソースが縦長 → 上下をクロップ
+    srcH = Math.floor(img.width / dstAspect);
+    srcY = Math.floor((img.height - srcH) / 2);
+  }
+
+  for (let y = 0; y < targetH; y++) {
+    for (let x = 0; x < targetW; x++) {
+      const sx = srcX + Math.floor((x * srcW) / targetW);
+      const sy = srcY + Math.floor((y * srcH) / targetH);
+      const srcIdx = (sy * img.width + sx) * 4;
+      const dstIdx = (y * targetW + x) * 4;
+      data[dstIdx] = img.data[srcIdx];
+      data[dstIdx + 1] = img.data[srcIdx + 1];
+      data[dstIdx + 2] = img.data[srcIdx + 2];
+      data[dstIdx + 3] = img.data[srcIdx + 3];
+    }
+  }
+
+  return { width: targetW, height: targetH, data };
+}
+
+// 外部画像を取得・デコード
+async function fetchAndDecodeImage(
+  url: string,
+): Promise<DecodedImage | null> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: { "User-Agent": "TierListMaker-OGP/1.0" },
+    });
+    clearTimeout(timeout);
+    if (!res.ok) return null;
+    const arrayBuf = await res.arrayBuffer();
+    if (arrayBuf.byteLength > 5 * 1024 * 1024) return null; // 5MB制限
+    return decodeImage(new Uint8Array(arrayBuf));
+  } catch {
+    return null;
+  }
+}
+
 // --- PNG生成ユーティリティ ---
 
 function hexToRgb(hex: string): [number, number, number] {
@@ -251,16 +529,12 @@ function createPngChunk(type: string, data: Uint8Array): Uint8Array {
   const typeBytes = new TextEncoder().encode(type);
   const length = data.length;
   const chunk = new Uint8Array(12 + length);
-  // Length (4 bytes big-endian)
   chunk[0] = (length >>> 24) & 0xff;
   chunk[1] = (length >>> 16) & 0xff;
   chunk[2] = (length >>> 8) & 0xff;
   chunk[3] = length & 0xff;
-  // Type (4 bytes)
   chunk.set(typeBytes, 4);
-  // Data
   chunk.set(data, 8);
-  // CRC32 over type + data
   const crcInput = new Uint8Array(4 + length);
   crcInput.set(typeBytes, 0);
   crcInput.set(data, 4);
@@ -272,7 +546,7 @@ function createPngChunk(type: string, data: Uint8Array): Uint8Array {
   return chunk;
 }
 
-// 5x7 ビットマップフォント (ASCII 32-90の一部)
+// 5x7 ビットマップフォント
 const FONT_5X7: Record<string, number[]> = {
   " ": [0, 0, 0, 0, 0, 0, 0],
   "!": [4, 4, 4, 4, 0, 0, 4],
@@ -363,7 +637,6 @@ function drawText(
     for (let row = 0; row < 7; row++) {
       for (let col = 0; col < 5; col++) {
         if (glyph[row] & (1 << (4 - col))) {
-          // Draw scaled pixel
           for (let sy = 0; sy < scale; sy++) {
             for (let sx = 0; sx < scale; sx++) {
               const px = cursorX + col * scale + sx;
@@ -407,11 +680,75 @@ function fillRect(
   }
 }
 
+// RGBA画像をRGBピクセルバッファに合成 (アルファブレンディング)
+function compositeImage(
+  pixels: Uint8Array,
+  canvasWidth: number,
+  img: DecodedImage,
+  dx: number,
+  dy: number,
+  dw: number,
+  dh: number,
+) {
+  const resized = resizeImage(img, dw, dh);
+  for (let y = 0; y < dh; y++) {
+    for (let x = 0; x < dw; x++) {
+      const px = dx + x;
+      const py = dy + y;
+      if (px < 0 || px >= canvasWidth || py < 0) continue;
+      const srcIdx = (y * dw + x) * 4;
+      const dstIdx = (py * canvasWidth + px) * 3;
+      const alpha = resized.data[srcIdx + 3] / 255;
+      if (alpha === 0) continue;
+      pixels[dstIdx] = Math.round(
+        resized.data[srcIdx] * alpha + pixels[dstIdx] * (1 - alpha),
+      );
+      pixels[dstIdx + 1] = Math.round(
+        resized.data[srcIdx + 1] * alpha + pixels[dstIdx + 1] * (1 - alpha),
+      );
+      pixels[dstIdx + 2] = Math.round(
+        resized.data[srcIdx + 2] * alpha + pixels[dstIdx + 2] * (1 - alpha),
+      );
+    }
+  }
+}
+
 function isLightColor(color: string): boolean {
   return color === "#FFD43B" || color === "#69DB7C";
 }
 
-function generatePng(title: string, tiers: OgTier[]): Uint8Array {
+// Tier全体から画像URLを収集 (最大並列fetch数を制限)
+async function fetchTierImages(
+  tiers: OgTier[],
+): Promise<Map<string, DecodedImage>> {
+  const imageMap = new Map<string, DecodedImage>();
+  const urls: string[] = [];
+
+  for (const tier of tiers.slice(0, 6)) {
+    for (const item of (tier.items || []).slice(0, 10)) {
+      if (item.url && !urls.includes(item.url)) {
+        urls.push(item.url);
+      }
+    }
+  }
+
+  // 最大10枚を並列fetch
+  const limited = urls.slice(0, 10);
+  const results = await Promise.allSettled(
+    limited.map(async (url) => {
+      const img = await fetchAndDecodeImage(url);
+      if (img) {
+        imageMap.set(url, img);
+      }
+    }),
+  );
+  // 結果は無視（失敗した画像はプレースホルダーになる）
+  void results;
+
+  return imageMap;
+}
+
+async function generatePng(title: string, tiers: OgTier[]): Promise<Uint8Array> {
   const width = 1200;
   const height = 630;
   const pixels = new Uint8Array(width * height * 3);
@@ -425,12 +762,18 @@ function generatePng(title: string, tiers: OgTier[]): Uint8Array {
   const titleX = Math.max(0, Math.floor((width - titleWidth) / 2));
   drawText(pixels, width, title, titleX, 20, titleScale, 0xff, 0xff, 0xff);
 
+  // 画像を並列fetch
+  const imageMap = await fetchTierImages(tiers);
+
   // Tier行描画
   const displayTiers = tiers.slice(0, 6);
   const tierHeight = 63;
   const labelWidth = 70;
   const startY = 100;
   const gap = 4;
+  const imgSize = tierHeight - 12;
+  const imgPadding = 6;
+  const imgGap = 4;
 
   displayTiers.forEach((tier, i) => {
     const y = startY + i * (tierHeight + gap);
@@ -463,22 +806,35 @@ function generatePng(title: string, tiers: OgTier[]): Uint8Array {
       0x3e,
     );
 
-    // アイテム数表示
-    const itemCount = (tier.items || []).length;
-    if (itemCount > 0) {
-      const countText = `${itemCount} items`;
-      drawText(
-        pixels,
-        width,
-        countText,
-        60 + labelWidth + 15,
-        y + Math.floor((tierHeight - 14) / 2),
-        2,
-        0xaa,
-        0xaa,
-        0xaa,
-      );
-    } else {
+    // アイテム画像を描画
+    const items = (tier.items || []).slice(0, 10);
+    items.forEach((item, j) => {
+      const imgX = 60 + labelWidth + imgPadding + j * (imgSize + imgGap);
+      const imgY = y + imgPadding;
+      const decoded = imageMap.get(item.url);
+
+      if (decoded) {
+        // 実画像を描画
+        compositeImage(pixels, width, decoded, imgX, imgY, imgSize, imgSize);
+      } else {
+        // プレースホルダー (グレー)
+        fillRect(
+          pixels,
+          width,
+          height,
+          imgX,
+          imgY,
+          imgSize,
+          imgSize,
+          0x44,
+          0x44,
+          0x55,
+        );
+        drawText(pixels, width, "?", imgX + 18, imgY + 12, 3, 0x88, 0x88, 0x88);
+      }
+    });
+
+    if (items.length === 0) {
       drawText(
         pixels,
         width,
@@ -520,10 +876,8 @@ function encodePng(
   height: number,
   rgb: Uint8Array,
 ): Uint8Array {
-  // PNG署名
   const signature = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
 
-  // IHDR
   const ihdrData = new Uint8Array(13);
   ihdrData[0] = (width >>> 24) & 0xff;
   ihdrData[1] = (width >>> 16) & 0xff;
@@ -533,17 +887,16 @@ function encodePng(
   ihdrData[5] = (height >>> 16) & 0xff;
   ihdrData[6] = (height >>> 8) & 0xff;
   ihdrData[7] = height & 0xff;
-  ihdrData[8] = 8; // bit depth
-  ihdrData[9] = 2; // color type: RGB
-  ihdrData[10] = 0; // compression
-  ihdrData[11] = 0; // filter
-  ihdrData[12] = 0; // interlace
+  ihdrData[8] = 8;
+  ihdrData[9] = 2; // RGB
+  ihdrData[10] = 0;
+  ihdrData[11] = 0;
+  ihdrData[12] = 0;
   const ihdr = createPngChunk("IHDR", ihdrData);
 
-  // IDAT - フィルターバイト付きの生ピクセルデータをdeflate圧縮
   const rawData = new Uint8Array(height * (1 + width * 3));
   for (let y = 0; y < height; y++) {
-    rawData[y * (1 + width * 3)] = 0; // filter: none
+    rawData[y * (1 + width * 3)] = 0;
     rawData.set(
       rgb.subarray(y * width * 3, (y + 1) * width * 3),
       y * (1 + width * 3) + 1,
@@ -552,10 +905,8 @@ function encodePng(
   const compressed = deflateSync(Buffer.from(rawData));
   const idat = createPngChunk("IDAT", new Uint8Array(compressed));
 
-  // IEND
   const iend = createPngChunk("IEND", new Uint8Array(0));
 
-  // 結合
   const png = new Uint8Array(
     signature.length + ihdr.length + idat.length + iend.length,
   );
@@ -573,8 +924,11 @@ function encodePng(
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const compressed = searchParams.get("data");
+    // URLSearchParams.get()は+をスペースに変換するため、生のURLから直接取得
+    const url = new URL(request.url);
+    const rawQuery = url.search.slice(1); // ?を除去
+    const dataMatch = rawQuery.match(/(?:^|&)data=([^&]*)/);
+    const compressed = dataMatch ? decodeURIComponent(dataMatch[1]) : null;
 
     let title = "Tier List";
     let tiers: OgTier[] = DEFAULT_TIERS;
@@ -587,7 +941,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const png = generatePng(title, tiers);
+    const png = await generatePng(title, tiers);
 
     return new NextResponse(Buffer.from(png), {
       headers: {
@@ -596,8 +950,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch {
-    // フォールバック: シンプルなPNG
-    const png = generatePng("Tier List Maker", DEFAULT_TIERS);
+    const png = await generatePng("Tier List Maker", DEFAULT_TIERS);
     return new NextResponse(Buffer.from(png), {
       headers: {
         "Content-Type": "image/png",
