@@ -1,36 +1,94 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Tier Share Maker
 
-## Getting Started
+ブラウザ上でTier表（ティアリスト）を作成・共有できるWebアプリケーションです。
 
-First, run the development server:
+ドラッグ&ドロップで画像をTierに配置し、作成したTier表をURLで共有したり、画像として保存できます。
+
+## 主な機能
+
+- **Tier表の作成** — 画像をドラッグ&ドロップでTierに配置
+- **画像の追加** — URL入力またはファイルアップロード
+- **Tier行のカスタマイズ** — ラベル名・色の変更、行の追加・削除・並び替え
+- **URL共有** — 作成したTier表をURLに圧縮して共有（サーバー保存不要）
+- **画像保存** — Tier表をPNG画像として書き出し
+- **OGP対応** — 共有URLにTier表のプレビュー画像を自動生成
+- **レスポンシブ対応** — PC・スマートフォンの両方で操作可能
+
+## 技術スタック
+
+| カテゴリ          | 技術                                              |
+| ----------------- | ------------------------------------------------- |
+| フレームワーク    | Next.js 16 (App Router) / React 19 / TypeScript 5 |
+| スタイリング      | Tailwind CSS v4                                   |
+| ドラッグ&ドロップ | dnd-kit (core v6, sortable v10)                   |
+| URL圧縮           | lz-string                                         |
+| 画像書き出し      | html-to-image                                     |
+| デプロイ先        | Cloudflare Workers (@opennextjs/cloudflare)       |
+
+## セットアップ
+
+### 前提条件
+
+- Node.js 22+
+- npm
+
+### インストール
+
+```bash
+git clone https://github.com/<your-username>/tier-share-maker.git
+cd tier-share-maker
+npm install
+```
+
+### ローカル開発
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+http://localhost:3000 でアプリが起動します。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## コマンド一覧
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| コマンド                   | 説明                                  |
+| -------------------------- | ------------------------------------- |
+| `npm run dev`              | ローカル開発サーバー起動              |
+| `npm run build`            | Next.js プロダクションビルド          |
+| `npm run build:cloudflare` | Cloudflare Workers 用ビルド           |
+| `npm run preview`          | Cloudflare Workers ローカルプレビュー |
+| `npm run deploy`           | Cloudflare Workers へデプロイ         |
+| `npm run lint`             | ESLint 実行                           |
+| `npm run format`           | Prettier でコードフォーマット         |
 
-## Learn More
+## デプロイ
 
-To learn more about Next.js, take a look at the following resources:
+mainブランチへのpushで GitHub Actions 経由で Cloudflare Workers に自動デプロイされます。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 必要なシークレット
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
 
-## Deploy on Vercel
+## プロジェクト構成
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+src/
+├── app/
+│   ├── page.tsx            # メインページ + 動的OGPメタタグ
+│   ├── layout.tsx          # ルートレイアウト
+│   ├── globals.css         # Tailwind CSS
+│   └── api/og/route.tsx    # OGP画像生成API
+├── components/
+│   ├── TierListEditor.tsx  # メインコンテナ (状態管理・D&D)
+│   ├── TierRowComponent.tsx # Tier行
+│   ├── TierLabel.tsx       # Tier名・色編集
+│   ├── ItemCard.tsx        # ドラッグ可能なアイテム
+│   ├── ItemPool.tsx        # 未配置アイテムプール
+│   └── ShareToolbar.tsx    # 共有・保存ツールバー
+├── lib/
+│   ├── constants.ts        # 定数定義
+│   ├── reducer.ts          # useReducer アクション定義
+│   └── share.ts            # URL共有 (エンコード/デコード)
+└── types/
+    └── tier.ts             # 型定義
+```
