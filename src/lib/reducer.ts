@@ -6,6 +6,10 @@ export type TierListAction =
   | { type: "ADD_ITEM"; payload: { item: Item } }
   | { type: "REMOVE_ITEM"; payload: { itemId: string } }
   | {
+      type: "UPDATE_ITEM";
+      payload: { itemId: string; url: string; label?: string };
+    }
+  | {
       type: "MOVE_ITEM";
       payload: {
         itemId: string;
@@ -109,6 +113,18 @@ export function tierListReducer(
         action.payload.itemId,
       );
       return newState;
+    }
+
+    case "UPDATE_ITEM": {
+      const { itemId, url, label } = action.payload;
+      const source: Item["source"] = url.startsWith("blob:") ? "local" : "url";
+      const updateInList = (list: Item[]) =>
+        list.map((i) => (i.id === itemId ? { ...i, url, label, source } : i));
+      return {
+        ...state,
+        pool: updateInList(state.pool),
+        tiers: state.tiers.map((t) => ({ ...t, items: updateInList(t.items) })),
+      };
     }
 
     case "MOVE_ITEM": {

@@ -12,11 +12,15 @@ interface ItemPoolProps {
   items: Item[];
   onAddItem: (item: Item) => void;
   onRemoveItem: (itemId: string) => void;
+  onUpdateItem: (
+    itemId: string,
+    updates: { url: string; label?: string },
+  ) => void;
   isViewMode?: boolean;
   showDebugOverlay?: boolean;
 }
 
-type Tab = "url" | "upload";
+type Tab = "url" | "upload" | "edit";
 
 function TrashZone() {
   const { active } = useDndContext();
@@ -43,14 +47,47 @@ export function ItemPool({
   items,
   onAddItem,
   onRemoveItem,
+  onUpdateItem,
   isViewMode,
   showDebugOverlay,
 }: ItemPoolProps) {
   const [tab, setTab] = useState<Tab>("url");
   const [urlInput, setUrlInput] = useState("");
   const [labelInput, setLabelInput] = useState("");
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editUrl, setEditUrl] = useState("");
+  const [editLabel, setEditLabel] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { setNodeRef, isOver } = useDroppable({ id: POOL_ID });
+
+  function handleSelectForEdit(item: Item) {
+    setEditingItemId(item.id);
+    setEditUrl(item.url);
+    setEditLabel(item.label ?? "");
+  }
+
+  function handleUpdateItem() {
+    if (!editingItemId) return;
+    const url = editUrl.trim();
+    if (!url) return;
+    onUpdateItem(editingItemId, {
+      url,
+      label: editLabel.trim() || undefined,
+    });
+    setEditingItemId(null);
+    setEditUrl("");
+    setEditLabel("");
+    setTab("url");
+  }
+
+  function handleSwitchTab(next: Tab) {
+    setTab(next);
+    if (next !== "edit") {
+      setEditingItemId(null);
+      setEditUrl("");
+      setEditLabel("");
+    }
+  }
 
   function handleAddUrl() {
     const url = urlInput.trim();
@@ -124,7 +161,7 @@ export function ItemPool({
           <div className="mb-2 flex gap-1">
             <button
               type="button"
-              onClick={() => setTab("url")}
+              onClick={() => handleSwitchTab("url")}
               className={`rounded px-3 py-1 text-xs ${
                 tab === "url"
                   ? "bg-[#0f3460] text-white"
@@ -135,7 +172,7 @@ export function ItemPool({
             </button>
             <button
               type="button"
-              onClick={() => setTab("upload")}
+              onClick={() => handleSwitchTab("upload")}
               className={`rounded px-3 py-1 text-xs ${
                 tab === "upload"
                   ? "bg-[#0f3460] text-white"
@@ -144,9 +181,20 @@ export function ItemPool({
             >
               📁 画像アップロード
             </button>
+            <button
+              type="button"
+              onClick={() => handleSwitchTab("edit")}
+              className={`rounded px-3 py-1 text-xs ${
+                tab === "edit"
+                  ? "bg-[#0f3460] text-white"
+                  : "border border-[#555] bg-[#2a2a3e] text-[#aaa]"
+              }`}
+            >
+              ✏️ 編集
+            </button>
           </div>
 
-          {tab === "url" ? (
+          {tab === "url" && (
             <div className="flex flex-col gap-2 md:flex-row">
               <input
                 type="url"
@@ -176,7 +224,9 @@ export function ItemPool({
                 追加
               </button>
             </div>
-          ) : (
+          )}
+
+          {tab === "upload" && (
             <div
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
@@ -197,6 +247,47 @@ export function ItemPool({
                 onChange={handleFileChange}
                 className="hidden"
               />
+            </div>
+          )}
+
+          {tab === "edit" && (
+            <div className="flex flex-col gap-2 md:flex-row">
+              <input
+                type="url"
+                value={editUrl}
+                onChange={(e) => setEditUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.nativeEvent.isComposing)
+                    handleUpdateItem();
+                }}
+                disabled={!editingItemId}
+                placeholder={
+                  editingItemId
+                    ? "https://example.com/image.png"
+                    : "下のアイテムをクリックして選択"
+                }
+                className="flex-1 rounded border border-[#333] bg-[#1a1a2e] px-3 py-1.5 text-sm text-white placeholder-[#555] outline-none focus:border-[#0f3460] disabled:opacity-50"
+              />
+              <input
+                type="text"
+                value={editLabel}
+                onChange={(e) => setEditLabel(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.nativeEvent.isComposing)
+                    handleUpdateItem();
+                }}
+                disabled={!editingItemId}
+                placeholder="ラベル（任意）"
+                className="w-full rounded border border-[#333] bg-[#1a1a2e] px-3 py-1.5 text-sm text-white placeholder-[#555] outline-none focus:border-[#0f3460] disabled:opacity-50 md:w-32"
+              />
+              <button
+                type="button"
+                onClick={handleUpdateItem}
+                disabled={!editingItemId || !editUrl.trim()}
+                className="rounded bg-[#e94560] px-4 py-1.5 text-sm text-white hover:bg-[#e94560]/80 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                更新
+              </button>
             </div>
           )}
         </div>
@@ -220,6 +311,8 @@ export function ItemPool({
                 key={item.id}
                 item={item}
                 onRemove={onRemoveItem}
+                onClick={tab === "edit" ? handleSelectForEdit : undefined}
+                isSelected={tab === "edit" && editingItemId === item.id}
                 showDebugOverlay={showDebugOverlay}
               />
             ))}

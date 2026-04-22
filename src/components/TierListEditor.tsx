@@ -338,6 +338,12 @@ export function TierListEditor() {
               onRemoveItem={(itemId) =>
                 dispatch({ type: "REMOVE_ITEM", payload: { itemId } })
               }
+              onUpdateItem={(itemId, updates) =>
+                dispatch({
+                  type: "UPDATE_ITEM",
+                  payload: { itemId, ...updates },
+                })
+              }
               isViewMode={isViewMode}
               showDebugOverlay={showDebugOverlay}
             />

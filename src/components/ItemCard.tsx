@@ -7,6 +7,8 @@ import type { Item } from "@/types/tier";
 interface ItemCardProps {
   item: Item;
   onRemove: (itemId: string) => void;
+  onClick?: (item: Item) => void;
+  isSelected?: boolean;
   isDragOverlay?: boolean;
   showDebugOverlay?: boolean;
 }
@@ -14,6 +16,8 @@ interface ItemCardProps {
 export function ItemCard({
   item,
   onRemove,
+  onClick,
+  isSelected,
   isDragOverlay,
   showDebugOverlay,
 }: ItemCardProps) {
@@ -53,15 +57,20 @@ export function ItemCard({
     );
   }
 
+  const borderClass = isSelected
+    ? "border-2 border-[#e94560]"
+    : showLocalIndicator
+      ? "border border-[#FFA94D]"
+      : "border border-[#555]";
+
   return (
     <div
       ref={setNodeRef}
       style={{ ...style, touchAction: "none" }}
       {...attributes}
       {...listeners}
-      className={`group relative h-16 w-16 shrink-0 cursor-grab rounded border bg-[#333] active:cursor-grabbing ${
-        showLocalIndicator ? "border-[#FFA94D]" : "border-[#555]"
-      }`}
+      onClick={onClick ? () => onClick(item) : undefined}
+      className={`group relative h-16 w-16 shrink-0 cursor-grab rounded bg-[#333] active:cursor-grabbing ${borderClass}`}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
