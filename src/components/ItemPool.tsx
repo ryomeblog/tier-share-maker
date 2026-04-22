@@ -183,14 +183,14 @@ export function ItemPool({
             </button>
             <button
               type="button"
-              onClick={() => handleSwitchTab("edit")}
+              onClick={() => handleSwitchTab(tab === "edit" ? "url" : "edit")}
               className={`rounded px-3 py-1 text-xs ${
                 tab === "edit"
-                  ? "bg-[#0f3460] text-white"
+                  ? "bg-[#e94560] text-white"
                   : "border border-[#555] bg-[#2a2a3e] text-[#aaa]"
               }`}
             >
-              ✏️ 編集
+              {tab === "edit" ? "✕ キャンセル" : "✏️ 編集"}
             </button>
           </div>
 
